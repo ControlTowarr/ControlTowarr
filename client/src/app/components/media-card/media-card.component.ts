@@ -55,7 +55,7 @@ import { MediaItem } from '../../services/api.service';
           <span *ngIf="media.year" style="color:var(--text-secondary);font-size:0.75rem;font-weight:500;">{{ media.year }}</span>
           <span *ngIf="media.total_size_bytes" style="color:var(--accent-primary);opacity:0.7;font-size:0.75rem;font-weight:600;">{{ formatSize(media.total_size_bytes) }}</span>
           <span *ngIf="hasDownloadClient" class="badge" [ngClass]="seedingBadgeClass" [title]="'Seeding Status: ' + seedingLabel" style="font-size:0.65rem; margin-left:auto;">
-            {{ seedingIcon }} {{ seedingLabel }}
+            {{ seedingIcon }}
           </span>
         </div>
 
