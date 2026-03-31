@@ -31,6 +31,7 @@ export interface MediaItem {
   last_watched_at?: string;
   instance_names?: string;
   instance_types?: string;
+  total_size_bytes?: number;
 }
 
 export interface MediaListResponse {

@@ -36,6 +36,7 @@ export interface FilterState {
         <option value="added_at">Sort: Date Added</option>
         <option value="last_watched_at">Sort: Last Watched</option>
         <option value="year">Sort: Year</option>
+        <option value="size_bytes">Sort: Disk Space</option>
       </select>
 
       <button class="btn btn-secondary" (click)="toggleOrder()" id="order-toggle-btn" [title]="filters.order === 'asc' ? 'Ascending' : 'Descending'" style="padding: 10px; min-width: 42px;">

@@ -37,9 +37,10 @@ import { MediaItem } from '../../services/api.service';
       <div class="media-card-info" style="display:flex; flex-direction:column; flex:1;">
         <div class="media-card-title" [title]="media.title">{{ media.title }}</div>
         
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; margin-top:2px;">
-          <span *ngIf="media.year" style="color:var(--text-muted);font-size:0.75rem;">{{ media.year }}</span>
-          <span *ngIf="hasDownloadClient" class="badge" [ngClass]="seedingBadgeClass" [title]="'Seeding Status: ' + seedingLabel" style="font-size:0.65rem;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; margin-top:2px;">
+          <span *ngIf="media.year" style="color:var(--text-secondary);font-size:0.75rem;font-weight:500;">{{ media.year }}</span>
+          <span *ngIf="media.total_size_bytes" style="color:var(--accent-primary);opacity:0.7;font-size:0.75rem;font-weight:600;">{{ formatSize(media.total_size_bytes) }}</span>
+          <span *ngIf="hasDownloadClient" class="badge" [ngClass]="seedingBadgeClass" [title]="'Seeding Status: ' + seedingLabel" style="font-size:0.65rem; margin-left:auto;">
             {{ seedingIcon }} {{ seedingLabel }}
           </span>
         </div>
@@ -116,6 +117,15 @@ export class MediaCardComponent {
     if (diffDays < 30) return `${diffDays}d ago`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
     return `${Math.floor(diffDays / 365)}y ago`;
+  }
+
+  formatSize(bytes: number): string {
+    if (!bytes) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0;
+    let size = bytes;
+    while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+    return `${size.toFixed(1)} ${units[i]}`;
   }
 
   getISODate(dateStr: string): string {

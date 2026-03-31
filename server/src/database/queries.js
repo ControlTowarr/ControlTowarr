@@ -154,6 +154,7 @@ export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedin
     last_watched_at: 'm.last_watched_at',
     year: 'm.year',
     seeding_status: 'm.seeding_status',
+    size_bytes: 'total_size_bytes',
   };
   const sortColumn = validSorts[sort] || 'm.title';
   const sortOrder = order === 'desc' ? 'DESC' : 'ASC';
@@ -170,6 +171,7 @@ export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedin
 
   const items = getDb().prepare(`
     SELECT m.*,
+      (SELECT SUM(mi.size_bytes) FROM media_instances mi WHERE mi.media_item_id = m.id) as total_size_bytes,
       (SELECT GROUP_CONCAT(DISTINCT i.name) FROM media_instances mi JOIN instances i ON mi.instance_id = i.id WHERE mi.media_item_id = m.id) as instance_names,
       (SELECT GROUP_CONCAT(DISTINCT i.type) FROM media_instances mi JOIN instances i ON mi.instance_id = i.id WHERE mi.media_item_id = m.id) as instance_types
     FROM media_items m

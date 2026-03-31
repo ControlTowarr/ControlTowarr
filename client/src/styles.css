@@ -304,11 +304,11 @@ a:hover {
 }
 
 .badge-radarr {
-  background: rgba(255, 165, 0, 0.15);
-  color: #ffa500;
+  background: rgba(115, 74, 0, 0.58);
+  color: #ffb835;
 }
 .badge-sonarr {
-  background: rgba(62, 203, 240, 0.15);
+  background: rgba(21, 92, 110, 0.5);
   color: #3ecbf0;
 }
 .badge-seerr {
