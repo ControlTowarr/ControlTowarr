@@ -32,28 +32,30 @@ export interface FilterState {
         />
       </div>
 
-      <button class="btn btn-secondary" (click)="toggleOrder()" id="order-toggle-btn" [title]="filters.order === 'asc' ? 'Ascending' : 'Descending'" style="padding: 10px; min-width: 42px;">
-        <!-- Bars getting progressively longer (Ascending) -->
-        <svg *ngIf="filters.order === 'asc'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="4" y1="6" x2="10" y2="6"></line>
-          <line x1="4" y1="12" x2="15" y2="12"></line>
-          <line x1="4" y1="18" x2="20" y2="18"></line>
-        </svg>
-        <!-- Bars getting progressively shorter (Descending) -->
-        <svg *ngIf="filters.order === 'desc'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="4" y1="6" x2="20" y2="6"></line>
-          <line x1="4" y1="12" x2="15" y2="12"></line>
-          <line x1="4" y1="18" x2="10" y2="18"></line>
-        </svg>
-      </button>
+      <div class="btn-group">
+        <button class="btn btn-secondary" (click)="toggleOrder()" id="order-toggle-btn" [title]="filters.order === 'asc' ? 'Ascending' : 'Descending'" style="padding: 10px; min-width: 42px;">
+          <!-- Bars getting progressively longer (Ascending) -->
+          <svg *ngIf="filters.order === 'asc'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="6" x2="10" y2="6"></line>
+            <line x1="4" y1="12" x2="15" y2="12"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+          </svg>
+          <!-- Bars getting progressively shorter (Descending) -->
+          <svg *ngIf="filters.order === 'desc'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="12" x2="15" y2="12"></line>
+            <line x1="4" y1="18" x2="10" y2="18"></line>
+          </svg>
+        </button>
 
-      <select class="form-select" [(ngModel)]="filters.sort" (ngModelChange)="onFilterChange()" id="sort-select">
-        <option value="title">Sort: Title</option>
-        <option value="added_at">Sort: Date Added</option>
-        <option value="last_watched_at">Sort: Last Watched</option>
-        <option value="year">Sort: Year</option>
-        <option value="size_bytes">Sort: Disk Space</option>
-      </select>
+        <select class="form-select" [(ngModel)]="filters.sort" (ngModelChange)="onFilterChange()" id="sort-select">
+          <option value="title">Sort: Title</option>
+          <option value="added_at">Sort: Date Added</option>
+          <option value="last_watched_at">Sort: Last Watched</option>
+          <option value="year">Sort: Year</option>
+          <option value="size_bytes">Sort: Disk Space</option>
+        </select>
+      </div>
  
       <select class="form-select" [(ngModel)]="filters.requestedBy" (ngModelChange)="onFilterChange()" id="requested-by-select">
         <option value="">Requested By: All</option>
@@ -62,7 +64,7 @@ export interface FilterState {
         </option>
       </select>
 
-      <div style="display:flex;gap:var(--space-sm);">
+      <div class="btn-group">
         <button
           class="filter-chip"
           [class.active]="filters.mediaType === ''"
@@ -80,7 +82,7 @@ export interface FilterState {
         >Series</button>
       </div>
 
-      <div style="display:flex;gap:var(--space-sm);">
+      <div class="btn-group">
         <button
           class="filter-chip"
           [class.active]="filters.seedingStatus === ''"
@@ -91,7 +93,6 @@ export interface FilterState {
           [class.active]="filters.seedingStatus === 'seeding'"
           (click)="setSeedingStatus('seeding')"
         >
-          <span style="width:6px;height:6px;border-radius:50%;background:var(--color-warning);"></span>
           🌱 Seeding
         </button>
         <button
@@ -99,7 +100,6 @@ export interface FilterState {
           [class.active]="filters.seedingStatus === 'done'"
           (click)="setSeedingStatus('done')"
         >
-          <span style="width:6px;height:6px;border-radius:50%;background:var(--color-success);"></span>
           🌳 Done
         </button>
         <button
@@ -107,12 +107,11 @@ export interface FilterState {
           [class.active]="filters.seedingStatus === 'unknown'"
           (click)="setSeedingStatus('unknown')"
         >
-          <span style="width:6px;height:6px;border-radius:50%;background:var(--text-muted);"></span>
           🍂 Unknown
         </button>
       </div>
 
-      <div style="display:flex;gap:var(--space-sm);">
+      <div class="btn-group">
         <button
           class="filter-chip"
           [class.active]="filters.watchStatus === ''"
