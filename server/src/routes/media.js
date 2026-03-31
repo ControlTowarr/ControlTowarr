@@ -41,6 +41,17 @@ router.get('/requesters', (req, res) => {
   }
 });
 
+// GET /api/media/root-folders — get list of unique root folders from media paths
+router.get('/root-folders', (req, res) => {
+  try {
+    const folders = queries.getRootFolders();
+    res.json(folders);
+  } catch (error) {
+    logger.error('Failed to get root folders:', error);
+    res.status(500).json({ error: 'Failed to get root folders' });
+  }
+});
+
 // GET /api/media/:id — get detailed media info
 router.get('/:id', (req, res) => {
   try {

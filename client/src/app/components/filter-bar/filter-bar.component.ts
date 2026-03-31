@@ -10,6 +10,7 @@ export interface FilterState {
   seedingStatus: string;
   watchStatus: string;
   requestedBy: string;
+  rootFolder: string;
 }
 
 @Component({
@@ -61,6 +62,13 @@ export interface FilterState {
         <option value="">Requested By: All</option>
         <option *ngFor="let user of requesters" [value]="user.requested_by_name">
           {{ user.requested_by_name }}
+        </option>
+      </select>
+
+      <select class="form-select" [(ngModel)]="filters.rootFolder" (ngModelChange)="onFilterChange()" id="root-folder-select">
+        <option value="">Root Folder: All</option>
+        <option *ngFor="let folder of rootFolders" [value]="folder">
+          {{ folder }}
         </option>
       </select>
 
@@ -135,8 +143,10 @@ export class FilterBarComponent {
     seedingStatus: '',
     watchStatus: '',
     requestedBy: '',
+    rootFolder: '',
   };
   @Input() requesters: any[] = [];
+  @Input() rootFolders: string[] = [];
   @Output() filtersChange = new EventEmitter<FilterState>();
 
   setMediaType(type: string) {

@@ -5,6 +5,42 @@
   </div>
 </div>
 
+<div class="stats-filters card-glass">
+  <div class="filter-group">
+    <label class="filter-label">Timeframe</label>
+    <select class="glass-select" [(ngModel)]="selectedDays" (ngModelChange)="onFilterChange()">
+      <option [ngValue]="30">Last 30 Days</option>
+      <option [ngValue]="90">Last 90 Days</option>
+      <option [ngValue]="180">Last 6 Months</option>
+      <option [ngValue]="365">Last Year</option>
+    </select>
+  </div>
+  
+  <div class="filter-group">
+    <label class="filter-label">Instance</label>
+    <select class="glass-select" [(ngModel)]="selectedInstance" (ngModelChange)="onFilterChange()">
+      <option [ngValue]="undefined">All Instances</option>
+      <option *ngFor="let instance of instances" [ngValue]="instance.id">{{ instance.name }}</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label class="filter-label">Root Folder</label>
+    <select class="glass-select" [(ngModel)]="selectedRootFolder" (ngModelChange)="onFilterChange()">
+      <option value="">All Folders</option>
+      <option *ngFor="let folder of rootFolders" [value]="folder">{{ folder }}</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label class="filter-label">User</label>
+    <select class="glass-select" [(ngModel)]="selectedUser" (ngModelChange)="onFilterChange()">
+      <option value="">All Users</option>
+      <option *ngFor="let user of users" [value]="user.requested_by_name">{{ user.requested_by_name }}</option>
+    </select>
+  </div>
+</div>
+
 <div class="stats-container" *ngIf="stats">
   <!-- Top Cards -->
   <div class="stats-grid top-cards">
@@ -28,14 +64,14 @@
   <!-- Trends Row -->
   <div class="stats-grid charts-row">
     <div class="chart-card card">
-      <h3 class="chart-title">Disk Usage Trend (Last 30 Days)</h3>
+      <h3 class="chart-title">Disk Usage Trend (Last {{ selectedDays }} Days)</h3>
       <div class="chart-wrapper">
         <canvas #trendChart></canvas>
       </div>
     </div>
     
     <div class="chart-card card">
-      <h3 class="chart-title">Library Growth (Last 30 Days)</h3>
+      <h3 class="chart-title">Library Growth (Last {{ selectedDays }} Days)</h3>
       <div class="chart-wrapper">
         <canvas #itemCountChart></canvas>
       </div>

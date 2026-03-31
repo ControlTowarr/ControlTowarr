@@ -1,6 +1,7 @@
-import { Component, OnInit, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApiService } from '../../services/api.service';
+import { FormsModule } from '@angular/forms';
+import { ApiService, Instance } from '../../services/api.service';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
@@ -9,7 +10,7 @@ Chart.register(...registerables, ChartDataLabels);
 @Component({
   selector: 'app-stats',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './stats.component.html',
   styleUrl: './stats.component.css'
 })
@@ -25,13 +26,32 @@ export class StatsComponent implements OnInit, AfterViewInit {
 
   chartInstances: Chart[] = [];
 
-  constructor(private api: ApiService) { }
+  instances: Instance[] = [];
+  rootFolders: string[] = [];
+  users: { requested_by_name: string; }[] = [];
+
+  selectedDays: number = 30;
+  selectedInstance: number | undefined = undefined;
+  selectedRootFolder: string = '';
+  selectedUser: string = '';
+
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
-    this.api.getStats(30).subscribe({
+    this.api.getInstances().subscribe(i => this.instances = i.filter(inst => inst.type === 'radarr' || inst.type === 'sonarr'));
+    this.api.getRootFolders().subscribe(rf => this.rootFolders = rf);
+    this.api.getRequesters().subscribe(users => this.users = users);
+    
+    this.loadStats();
+  }
+
+  loadStats() {
+    this.isLoading = true;
+    this.api.getStats(this.selectedDays, this.selectedInstance, this.selectedRootFolder || undefined, this.selectedUser || undefined).subscribe({
       next: (data) => {
         this.stats = data;
         this.isLoading = false;
+        this.cdr.detectChanges(); // Force DOM update for *ngIf before rendering charts
         setTimeout(() => this.renderCharts(), 0);
       },
       error: (err) => {
@@ -41,8 +61,13 @@ export class StatsComponent implements OnInit, AfterViewInit {
     });
   }
 
+  onFilterChange() {
+    this.loadStats();
+  }
+
   ngAfterViewInit() {
     if (this.stats && this.chartInstances.length === 0) {
+      this.cdr.detectChanges();
       setTimeout(() => this.renderCharts(), 0);
     }
   }

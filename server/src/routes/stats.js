@@ -14,42 +14,78 @@ router.get('/', (req, res) => {
 
   try {
     const days = parseInt(req.query.days || '30', 10);
+    const instanceId = req.query.instanceId ? parseInt(req.query.instanceId, 10) : null;
+    const rootFolder = req.query.rootFolder || null;
+    const user = req.query.user || null;
+
+    const db = getDb();
+    
+    // Filters for media_items
+    let baseWhere = [];
+    let params = [];
+    if (instanceId) {
+      baseWhere.push(`id IN (SELECT media_item_id FROM media_instances WHERE instance_id = ?)`);
+      params.push(instanceId);
+    }
+    if (rootFolder) {
+      baseWhere.push(`id IN (SELECT media_item_id FROM media_instances WHERE path LIKE ?)`);
+      params.push(rootFolder + '/%');
+    }
+    if (user) {
+      baseWhere.push(`id IN (SELECT media_item_id FROM media_requests WHERE requested_by_name = ?)`);
+      params.push(user);
+    }
+    const whereMedia = baseWhere.length ? `WHERE ${baseWhere.join(' AND ')}` : '';
+
+    // Filters for media_instances
+    let sizeWhere = [];
+    let sizeParams = [];
+    if (instanceId) { sizeWhere.push(`instance_id = ?`); sizeParams.push(instanceId); }
+    if (rootFolder) { sizeWhere.push(`path LIKE ?`); sizeParams.push(rootFolder + '/%'); }
+    if (user) { sizeWhere.push(`media_item_id IN (SELECT media_item_id FROM media_requests WHERE requested_by_name = ?)`); sizeParams.push(user); }
+    const whereSize = sizeWhere.length ? `WHERE ${sizeWhere.join(' AND ')}` : '';
 
     // 1. Current Totals
-    const db = getDb();
-    const currentMovies = db.prepare("SELECT COUNT(*) as count FROM media_items WHERE media_type = 'movie'").get().count;
-    const currentSeries = db.prepare("SELECT COUNT(*) as count FROM media_items WHERE media_type = 'series'").get().count;
-    const currentTotalSize = db.prepare('SELECT SUM(size_bytes) as total FROM media_instances').get().total || 0;
+    const currentMovies = db.prepare(`SELECT COUNT(*) as count FROM media_items ${whereMedia} ${whereMedia ? 'AND' : 'WHERE'} media_type = 'movie'`).get(...params).count;
+    const currentSeries = db.prepare(`SELECT COUNT(*) as count FROM media_items ${whereMedia} ${whereMedia ? 'AND' : 'WHERE'} media_type = 'series'`).get(...params).count;
+    const currentTotalSize = db.prepare(`SELECT SUM(size_bytes) as total FROM media_instances ${whereSize}`).get(...sizeParams).total || 0;
 
     const instanceTotals = db.prepare(`
       SELECT m.instance_id, i.name as instance_name, i.type as instance_type, COUNT(DISTINCT m.media_item_id) as item_count, SUM(m.size_bytes) as total_bytes
       FROM media_instances m
       LEFT JOIN instances i ON m.instance_id = i.id
+      ${whereSize}
       GROUP BY m.instance_id
-    `).all();
+    `).all(...sizeParams);
 
     const watchStats = db.prepare(`
       SELECT 
         SUM(CASE WHEN last_watched_at IS NOT NULL THEN 1 ELSE 0 END) as watched,
         SUM(CASE WHEN last_watched_at IS NULL THEN 1 ELSE 0 END) as unwatched
       FROM media_items
-    `).get();
+      ${whereMedia}
+    `).get(...params);
 
     // 2. Historical Metrics
-    const historicalMetrics = queries.getHistoricalMetrics(days);
+    const historicalMetrics = queries.getHistoricalMetrics(days, instanceId, rootFolder);
 
     // 3. Action Summary (Total ever deleted)
-    const actionSummary = queries.getActionSummary();
+    const actionSummary = queries.getActionSummary(instanceId, rootFolder);
 
     // Monthly Space Freed History
+    let freedWhere = `WHERE action_type = 'media_deleted'`;
+    let freedParams = [];
+    if (instanceId) { freedWhere += ` AND instance_id = ?`; freedParams.push(instanceId); }
+    if (rootFolder) { freedWhere += ` AND details LIKE ?`; freedParams.push(`%${rootFolder}%`); }
+
     const monthlySpaceFreed = db.prepare(`
       SELECT strftime('%Y-%m', created_at) as month, SUM(size_freed_bytes) as total_bytes
       FROM action_logs
-      WHERE action_type = 'media_deleted'
+      ${freedWhere}
       GROUP BY month
       ORDER BY month DESC
       LIMIT 12
-    `).all();
+    `).all(...freedParams);
 
     res.json({
       current: {

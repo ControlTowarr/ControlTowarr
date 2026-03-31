@@ -486,7 +486,25 @@ async function collectMetrics() {
       queries.upsertMetric({ date: today, metric_name: 'instance_size_bytes', instance_id: row.instance_id, value: row.total || 0 });
     }
 
-    logger.info(`Collected daily metrics for ${today}`);
+    // 3. Per-Root Folder Metrics
+    const rootFolders = queries.getRootFolders();
+    for (const folder of rootFolders) {
+      const folderStats = db.prepare('SELECT COUNT(DISTINCT media_item_id) as count, SUM(size_bytes) as total FROM media_instances WHERE path LIKE ?').get(folder + '/%');
+      queries.upsertMetric({ 
+        date: today, 
+        metric_name: 'folder_item_count', 
+        root_folder: folder, 
+        value: folderStats.count || 0 
+      });
+      queries.upsertMetric({ 
+        date: today, 
+        metric_name: 'folder_size_bytes', 
+        root_folder: folder, 
+        value: folderStats.total || 0 
+      });
+    }
+
+    logger.info(`Collected daily metrics for ${today} (${rootFolders.length} folders)`);
   } catch (error) {
     logger.error(`Failed to collect daily metrics: ${error.message}`);
   }

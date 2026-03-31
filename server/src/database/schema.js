@@ -149,10 +149,11 @@ function createTables() {
       date TEXT NOT NULL,
       metric_name TEXT NOT NULL,
       instance_id INTEGER,
+      root_folder TEXT,
       value REAL NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE,
-      UNIQUE(date, metric_name, instance_id)
+      UNIQUE(date, metric_name, instance_id, root_folder)
     );
 
     CREATE INDEX IF NOT EXISTS idx_metrics_timeseries_date ON metrics_timeseries(date);
@@ -198,9 +199,12 @@ function createTables() {
   // Migration: add details to action_logs if missing
   try {
     db.prepare('ALTER TABLE action_logs ADD COLUMN details TEXT').run();
-  } catch (err) {
-    // Ignore error
-  }
+  } catch (err) { }
+
+  // Migration: add root_folder to metrics_timeseries if missing
+  try {
+    db.prepare('ALTER TABLE metrics_timeseries ADD COLUMN root_folder TEXT').run();
+  } catch (err) { }
 }
 
 function seedDefaults() {

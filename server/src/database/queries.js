@@ -124,13 +124,17 @@ export function deleteMediaItem(id) {
   return getDb().prepare('DELETE FROM media_items WHERE id = ?').run(id);
 }
 
-export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedingStatus, watchStatus, requestedBy, search, limit = 100, offset = 0 } = {}) {
+export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedingStatus, watchStatus, requestedBy, rootFolder, search, limit = 100, offset = 0 } = {}) {
   let where = [];
   let params = [];
 
   if (requestedBy) {
     where.push('m.id IN (SELECT media_item_id FROM media_requests WHERE requested_by_name = ?)');
     params.push(requestedBy);
+  }
+  if (rootFolder) {
+    where.push('m.id IN (SELECT media_item_id FROM media_instances WHERE path LIKE ?)');
+    params.push(rootFolder + '/%');
   }
   if (mediaType) {
     where.push('m.media_type = ?');
@@ -255,6 +259,22 @@ export function getMediaInstancesByMediaId(mediaId) {
     JOIN instances i ON mi.instance_id = i.id
     WHERE mi.media_item_id = ?
   `).all(mediaId);
+}
+
+export function getRootFolders() {
+  const paths = getDb().prepare('SELECT DISTINCT path FROM media_instances WHERE path IS NOT NULL').all();
+  const rootFolders = new Set();
+  
+  paths.forEach(({ path }) => {
+    const parts = path.split(/[/\\]/);
+    if (parts.length > 1) {
+      parts.pop(); 
+      const base = parts.join('/');
+      if (base) rootFolders.add(base);
+    }
+  });
+  
+  return Array.from(rootFolders).sort();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -402,38 +422,91 @@ export function logAction({ action_type, media_type, media_title, instance_id, s
   `).run(action_type, media_type || null, media_title || null, instance_id || null, size_freed_bytes || 0, details ? JSON.stringify(details) : null);
 }
 
-export function upsertMetric({ date, metric_name, instance_id, value }) {
-  getDb().prepare(`
-    INSERT INTO metrics_timeseries (date, metric_name, instance_id, value, updated_at)
-    VALUES (?, ?, ?, ?, datetime('now'))
-    ON CONFLICT(date, metric_name, instance_id) DO UPDATE SET 
-      value = excluded.value, 
-      updated_at = datetime('now')
-  `).run(date, metric_name, instance_id || null, value);
+export function upsertMetric({ date, metric_name, instance_id, root_folder, value }) {
+  const db = getDb();
+  // We handle manual existence check because SQLite UNIQUE constraints with NULLs don't trigger ON CONFLICT as expected for upsert
+  const existing = db.prepare(`
+    SELECT id FROM metrics_timeseries 
+    WHERE date = ? AND metric_name = ? 
+    AND (instance_id = ? OR (instance_id IS NULL AND ? IS NULL))
+    AND (root_folder = ? OR (root_folder IS NULL AND ? IS NULL))
+  `).get(date, metric_name, instance_id || null, instance_id || null, root_folder || null, root_folder || null);
+
+  if (existing) {
+    db.prepare('UPDATE metrics_timeseries SET value = ?, updated_at = datetime("now") WHERE id = ?').run(value, existing.id);
+  } else {
+    db.prepare(`
+      INSERT INTO metrics_timeseries (date, metric_name, instance_id, root_folder, value)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(date, metric_name, instance_id || null, root_folder || null, value);
+  }
 }
 
-export function getHistoricalMetrics(days = 30) {
-  return getDb().prepare(`
-    SELECT * FROM metrics_timeseries 
+export function getHistoricalMetrics(days = 30, instanceId = null, rootFolder = null) {
+  let query = `
+    SELECT date, metric_name, AVG(value) as value
+    FROM metrics_timeseries 
     WHERE date >= date('now', ?)
-    ORDER BY date ASC
-  `).all(`-${days} days`);
+  `;
+  const params = [`-${days} days`];
+
+  if (instanceId) {
+    query += ` AND instance_id = ? AND metric_name IN ('instance_size_bytes', 'instance_item_count')`;
+    params.push(instanceId);
+  } else if (rootFolder) {
+    query += ` AND root_folder = ? AND metric_name IN ('folder_size_bytes', 'folder_item_count')`;
+    params.push(rootFolder);
+  } else {
+    // Global metrics
+    query += ` AND instance_id IS NULL AND root_folder IS NULL`;
+  }
+
+  // If over 30 days, we only want 1 value per day. Since they are stored daily, grouping by date works.
+  query += ` GROUP BY date, metric_name ORDER BY date ASC`;
+
+  let results = getDb().prepare(query).all(...params);
+  
+  // Transform folder/instance metrics into expected global metrics for the UI to display them correctly
+  results = results.map(row => {
+    if (row.metric_name === 'instance_size_bytes' || row.metric_name === 'folder_size_bytes') {
+      return { ...row, metric_name: 'total_size_bytes' };
+    }
+    if (row.metric_name === 'instance_item_count' || row.metric_name === 'folder_item_count') {
+      return { ...row, metric_name: 'total_movies' }; // UI uses total_movies for item count growth
+    }
+    return row;
+  });
+  
+  return results;
 }
 
-export function getActionSummary() {
+export function getActionSummary(instanceId = null, rootFolder = null) {
+  let whereClause = `WHERE action_type = 'media_deleted'`;
+  const params = [];
+
+  if (instanceId) {
+    whereClause += ` AND instance_id = ?`;
+    params.push(instanceId);
+  }
+  
+  if (rootFolder) {
+    whereClause += ` AND details LIKE ?`; // Fallback, details contains full path theoretically
+    params.push(`%${rootFolder}%`);
+  }
+
   const totalDeleted = getDb().prepare(`
     SELECT COUNT(DISTINCT media_title || strftime('%Y-%m-%d %H:%M', created_at)) as count, SUM(size_freed_bytes) as total_bytes 
     FROM action_logs 
-    WHERE action_type = 'media_deleted'
-  `).get();
+    ${whereClause}
+  `).get(...params);
 
   const deletedPerInstance = getDb().prepare(`
     SELECT a.instance_id, i.name as instance_name, i.type as instance_type, COUNT(*) as count, SUM(a.size_freed_bytes) as total_bytes
     FROM action_logs a
     LEFT JOIN instances i ON a.instance_id = i.id
-    WHERE a.action_type = 'media_deleted'
+    ${whereClause}
     GROUP BY a.instance_id
-  `).all();
+  `).all(...params);
 
   return { totalDeleted, deletedPerInstance };
 }

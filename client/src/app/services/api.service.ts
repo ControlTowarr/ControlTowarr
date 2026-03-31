@@ -187,6 +187,7 @@ export class ApiService {
     watchStatus?: string;
     search?: string;
     requestedBy?: string;
+    rootFolder?: string;
     limit?: number;
     offset?: number;
   } = {}): Observable<MediaListResponse> {
@@ -216,6 +217,10 @@ export class ApiService {
   getRequesters(): Observable<{ requested_by_name: string; requested_by_avatar?: string; requested_by_id?: number }[]> {
     return this.http.get<{ requested_by_name: string; requested_by_avatar?: string; requested_by_id?: number }[]>(`${this.baseUrl}/media/requesters`);
   }
+
+  getRootFolders(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/media/root-folders`);
+  }
  
   getSyncStatus(): Observable<SyncStatus> {
     return this.http.get<SyncStatus>(`${this.baseUrl}/sync/status`);
@@ -239,9 +244,17 @@ export class ApiService {
 
   // ── Stats ──
 
-  getStats(days: number = 30): Observable<any> {
+  getStats(days: number = 30, instanceId?: number, rootFolder?: string, user?: string): Observable<any> {
     const timestamp = new Date().getTime(); // Add a unique timestamp to force a fresh request in addition to server headers
-    return this.http.get<any>(`${this.baseUrl}/stats?days=${days}&t=${timestamp}`);
+    let httpParams = new HttpParams()
+                     .set('days', days.toString())
+                     .set('t', timestamp.toString());
+    
+    if (instanceId) httpParams = httpParams.set('instanceId', instanceId.toString());
+    if (rootFolder) httpParams = httpParams.set('rootFolder', rootFolder);
+    if (user) httpParams = httpParams.set('user', user);
+
+    return this.http.get<any>(`${this.baseUrl}/stats`, { params: httpParams });
   }
 
   getDeletionLogs(limit: number = 100, offset: number = 0): Observable<any> {

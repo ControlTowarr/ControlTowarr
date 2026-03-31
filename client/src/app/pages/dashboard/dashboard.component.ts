@@ -41,6 +41,7 @@ import { DeleteModalComponent } from '../../components/delete-modal/delete-modal
     <app-filter-bar
       [filters]="filters"
       [requesters]="requesters"
+      [rootFolders]="rootFolders"
       (filtersChange)="onFiltersChange($event)"
     ></app-filter-bar>
 
@@ -54,7 +55,12 @@ import { DeleteModalComponent } from '../../components/delete-modal/delete-modal
       <div class="empty-state-icon">📺</div>
       <h3 class="empty-state-title">No media found</h3>
       <p class="empty-state-text">
-        {{ hasFilters ? 'Try adjusting your filters.' : 'Connect your Radarr/Sonarr instances and run a sync to populate your library.' }}
+        <ng-container *ngIf="hasFilters; else noFilters">
+          No media found for the current filters. Try removing some filters to see your content.
+        </ng-container>
+        <ng-template #noFilters>
+          Connect your Radarr/Sonarr instances and run a sync to populate your library.
+        </ng-template>
       </p>
       <button *ngIf="!hasFilters" class="btn btn-primary" routerLink="/settings" id="goto-settings-btn">
         Configure Instances
@@ -106,6 +112,7 @@ export class DashboardComponent implements OnInit {
   selectedItems = new Set<number>();
   hasDownloadClient = false;
   requesters: any[] = [];
+  rootFolders: string[] = [];
 
   filters: FilterState = {
     search: '',
@@ -115,6 +122,7 @@ export class DashboardComponent implements OnInit {
     seedingStatus: '',
     watchStatus: '',
     requestedBy: '',
+    rootFolder: '',
   };
 
   private currentLimit = 100;
@@ -144,10 +152,12 @@ export class DashboardComponent implements OnInit {
         seedingStatus: params['seedingStatus'] || '',
         watchStatus: params['watchStatus'] || '',
         requestedBy: params['requestedBy'] || '',
+        rootFolder: params['rootFolder'] || '',
       };
       this.loadMedia();
     });
     this.loadRequesters();
+    this.loadRootFolders();
     this.checkSyncStatus();
     this.checkDownloadClient();
   }
@@ -158,6 +168,12 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  loadRootFolders() {
+    this.api.getRootFolders().subscribe(folders => {
+      this.rootFolders = folders;
+    });
+  }
+
   checkDownloadClient() {
     this.api.getInstances().subscribe(instances => {
       this.hasDownloadClient = instances.some(i => i.type === 'qbittorrent');
@@ -165,7 +181,7 @@ export class DashboardComponent implements OnInit {
   }
 
   get hasFilters(): boolean {
-    return !!(this.filters.search || this.filters.mediaType || this.filters.seedingStatus);
+    return !!(this.filters.search || this.filters.mediaType || this.filters.seedingStatus || this.filters.watchStatus || this.filters.requestedBy || this.filters.rootFolder);
   }
 
   loadMedia() {
@@ -183,6 +199,7 @@ export class DashboardComponent implements OnInit {
       seedingStatus: this.filters.seedingStatus || undefined,
       watchStatus: this.filters.watchStatus || undefined,
       requestedBy: this.filters.requestedBy || undefined,
+      rootFolder: this.filters.rootFolder || undefined,
       search: this.filters.search || undefined,
       limit: this.currentLimit,
       offset: 0,
@@ -226,6 +243,7 @@ export class DashboardComponent implements OnInit {
         seedingStatus: filters.seedingStatus || null,
         watchStatus: filters.watchStatus || null,
         requestedBy: filters.requestedBy || null,
+        rootFolder: filters.rootFolder || null,
       },
       queryParamsHandling: 'merge',
     });
