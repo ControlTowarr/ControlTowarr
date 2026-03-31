@@ -95,6 +95,23 @@
     </div>
   </div>
 
+  <!-- User Row -->
+  <div class="stats-grid charts-row mt-4" *ngIf="stats.current.userStats?.length">
+    <div class="chart-card card">
+      <h3 class="chart-title">Requests by User (Top 10)</h3>
+      <div class="chart-wrapper">
+        <canvas #userRequestsChart></canvas>
+      </div>
+    </div>
+    
+    <div class="chart-card card">
+      <h3 class="chart-title">Disk Space by User (Top 10)</h3>
+      <div class="chart-wrapper">
+        <canvas #userDiskChart></canvas>
+      </div>
+    </div>
+  </div>
+
   <!-- Additional Row -->
   <div class="stats-grid full-row mt-4">
     <div class="chart-card card">

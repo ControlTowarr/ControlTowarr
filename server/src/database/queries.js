@@ -274,7 +274,7 @@ export function getRootFolders() {
     }
   });
   
-  return Array.from(rootFolders).sort();
+  return Array.from(rootFolders).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -569,6 +569,6 @@ export function getUniqueRequesters() {
     SELECT DISTINCT requested_by_name, requested_by_avatar, requested_by_id 
     FROM media_requests 
     WHERE requested_by_name IS NOT NULL
-    ORDER BY requested_by_name ASC
+    ORDER BY LOWER(requested_by_name) ASC
   `).all();
 }

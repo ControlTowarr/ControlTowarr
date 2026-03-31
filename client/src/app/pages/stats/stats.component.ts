@@ -20,6 +20,8 @@ export class StatsComponent implements OnInit, AfterViewInit {
   @ViewChild('instanceChart') instanceChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('watchChart') watchChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('freedChart') freedChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('userRequestsChart') userRequestsChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('userDiskChart') userDiskChartRef!: ElementRef<HTMLCanvasElement>;
 
   stats: any = null;
   isLoading = true;
@@ -109,6 +111,8 @@ export class StatsComponent implements OnInit, AfterViewInit {
     this.renderInstanceChart();
     this.renderWatchChart();
     this.renderFreedChart(gridColor);
+    this.renderUserRequestsChart(gridColor);
+    this.renderUserDiskChart(gridColor);
   }
 
   renderTrendChart(gridColor: string) {
@@ -163,8 +167,8 @@ export class StatsComponent implements OnInit, AfterViewInit {
       data: {
         labels,
         datasets: [
-          { label: 'Movies', data: moviesData, borderColor: '#a78bfa', backgroundColor: 'rgba(167, 139, 250, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 },
-          { label: 'Series', data: seriesData, borderColor: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 }
+          { label: 'Movies', data: moviesData, borderColor: '#ffb835', backgroundColor: 'rgba(255, 184, 53, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 },
+          { label: 'Series', data: seriesData, borderColor: '#3ecbf0', backgroundColor: 'rgba(62, 203, 240, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 2 }
         ]
       },
       options: {
@@ -310,6 +314,90 @@ export class StatsComponent implements OnInit, AfterViewInit {
         plugins: {
           legend: { display: false },
           datalabels: { display: false }
+        }
+      }
+    });
+    this.chartInstances.push(chart);
+  }
+
+  renderUserRequestsChart(gridColor: string) {
+    if (!this.userRequestsChartRef || !this.stats?.current?.userStats) return;
+    const userStats = (this.stats.current.userStats || []).slice(0, 10);
+    if (userStats.length === 0) return;
+
+    const labels = userStats.map((u: any) => u.user_name);
+    const movieData = userStats.map((u: any) => u.movie_requests);
+    const seriesData = userStats.map((u: any) => u.series_requests);
+
+    const chart = new Chart(this.userRequestsChartRef.nativeElement, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Movies', data: movieData, backgroundColor: '#ffb835', borderRadius: 4 },
+          { label: 'Series', data: seriesData, backgroundColor: '#3ecbf0', borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, grid: { color: gridColor }, beginAtZero: true }
+        },
+        plugins: {
+          legend: { position: 'top' },
+          datalabels: { display: false }
+        }
+      }
+    });
+    this.chartInstances.push(chart);
+  }
+
+  renderUserDiskChart(gridColor: string) {
+    if (!this.userDiskChartRef || !this.stats?.current?.userStats) return;
+    const userStats = [...(this.stats.current.userStats || [])]
+      .sort((a: any, b: any) => b.total_bytes - a.total_bytes)
+      .slice(0, 10);
+    if (userStats.length === 0) return;
+    
+    const labels = userStats.map((u: any) => u.user_name);
+    const rawValues = userStats.map((u: any) => u.total_bytes);
+    const scale = this.getScaleParameters(rawValues);
+    const data = rawValues.map((v: number) => v / scale.divisor);
+
+    const chart = new Chart(this.userDiskChartRef.nativeElement, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: `Disk Usage (${scale.label})`,
+          data,
+          backgroundColor: '#3ecbf0',
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { grid: { display: false } },
+          y: { 
+            grid: { color: gridColor }, 
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => `${value} ${scale.label}`
+            }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          datalabels: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `Disk Usage: ${(ctx.raw as number).toFixed(1)} ${scale.label}`
+            }
+          }
         }
       }
     });

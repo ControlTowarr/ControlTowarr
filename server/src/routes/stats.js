@@ -87,13 +87,44 @@ router.get('/', (req, res) => {
       LIMIT 12
     `).all(...freedParams);
 
+    // 4. User Stats
+    let uParams = [];
+    let sizeSubConds = ['mi.media_item_id = m.id'];
+    if (instanceId) { sizeSubConds.push('mi.instance_id = ?'); uParams.push(instanceId); }
+    if (rootFolder) { sizeSubConds.push('mi.path LIKE ?'); uParams.push(rootFolder + '/%'); }
+    
+    let mConds = [];
+    if (instanceId) { mConds.push('m.id IN (SELECT media_item_id FROM media_instances WHERE instance_id = ?)'); uParams.push(instanceId); }
+    if (rootFolder) { mConds.push('m.id IN (SELECT media_item_id FROM media_instances WHERE path LIKE ?)'); uParams.push(rootFolder + '/%'); }
+    if (user) { mConds.push('m.id IN (SELECT media_item_id FROM media_requests WHERE requested_by_name = ?)'); uParams.push(user); }
+    
+    const userStats = db.prepare(`
+      SELECT 
+        r.requested_by_name as user_name,
+        SUM(CASE WHEN m.media_type = 'movie' THEN 1 ELSE 0 END) as movie_requests,
+        SUM(CASE WHEN m.media_type = 'series' THEN 1 ELSE 0 END) as series_requests,
+        COUNT(DISTINCT m.id) as total_requests,
+        SUM((
+          SELECT COALESCE(SUM(mi.size_bytes), 0)
+          FROM media_instances mi
+          WHERE ${sizeSubConds.join(' AND ')}
+        )) as total_bytes
+      FROM media_requests r
+      JOIN media_items m ON r.media_item_id = m.id
+      ${mConds.length ? 'WHERE ' + mConds.join(' AND ') : ''}
+      GROUP BY r.requested_by_name
+      HAVING r.requested_by_name IS NOT NULL
+      ORDER BY total_requests DESC
+    `).all(...uParams);
+
     res.json({
       current: {
         totalMovies: currentMovies,
         totalSeries: currentSeries,
         totalSizeBytes: currentTotalSize,
         instances: instanceTotals,
-        watchStats: watchStats || { watched: 0, unwatched: 0 }
+        watchStats: watchStats || { watched: 0, unwatched: 0 },
+        userStats: userStats
       },
       historical: historicalMetrics,
       actions: {
