@@ -60,12 +60,23 @@ import { DeleteModalComponent } from '../../components/delete-modal/delete-modal
             </div>
           </div>
 
-          <button class="btn btn-danger" (click)="openDeleteModal()" id="delete-media-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-            Delete Everywhere
-          </button>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--space-md);margin-bottom:var(--space-lg);">
+            <button class="btn btn-danger" (click)="openDeleteModal()" id="delete-media-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Delete Everywhere
+            </button>
+
+            <a *ngFor="let link of overseerrLinks" [href]="link.url" target="_blank" class="btn btn-outline" style="display:inline-flex;align-items:center;gap:var(--space-xs);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              Open in {{ link.name }}
+            </a>
+          </div>
         </div>
       </div>
 
@@ -220,6 +231,7 @@ export class MediaDetailComponent implements OnInit {
   showDeleteModal = false;
   isDeleting = false;
   deleteTargetList: string[] = [];
+  overseerrLinks: { name: string, url: string }[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -234,10 +246,27 @@ export class MediaDetailComponent implements OnInit {
       next: (detail) => {
         this.media = detail;
         this.isLoading = false;
+        this.loadOverseerrLinks();
       },
       error: () => {
         this.isLoading = false;
       },
+    });
+  }
+
+  loadOverseerrLinks() {
+    if (!this.media || !this.media.tmdb_id) return;
+
+    this.api.getInstances().subscribe(instances => {
+      this.overseerrLinks = instances
+        .filter(inst => inst.type === 'seerr' && inst.enabled !== false)
+        .map(inst => {
+          const typePath = this.media!.media_type === 'movie' ? 'movie' : 'tv';
+          return {
+            name: inst.name,
+            url: `${inst.url}/${typePath}/${this.media!.tmdb_id}`
+          };
+        });
     });
   }
 
