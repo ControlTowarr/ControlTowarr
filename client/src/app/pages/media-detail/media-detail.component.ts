@@ -44,8 +44,8 @@ import { DeleteModalComponent } from '../../components/delete-modal/delete-modal
             <span class="badge" [ngClass]="media.media_type === 'movie' ? 'badge-radarr' : 'badge-sonarr'">
               {{ media.media_type === 'movie' ? 'Movie' : 'Series' }}
             </span>
-            <span class="badge" [ngClass]="seedingBadgeClass">{{ seedingIcon }} {{ seedingLabel }}</span>
             <span *ngIf="media.year" class="badge badge-muted">{{ media.year }}</span>
+            <span class="badge" [ngClass]="seedingBadgeClass">{{ seedingIcon }} {{ seedingLabel }}</span>
             <span *ngIf="media.imdb_id" class="badge badge-info">{{ media.imdb_id }}</span>
           </div>
 
@@ -226,7 +226,7 @@ export class MediaDetailComponent implements OnInit {
     private router: Router,
     private api: ApiService,
     private location: Location
-  ) {}
+  ) { }
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -345,7 +345,7 @@ export class MediaDetailComponent implements OnInit {
       next: () => {
         this.isDeleting = false;
         this.showDeleteModal = false;
-        
+
         // Remove the deleted item from the dashboard cache so it vanishes immediately
         if (this.api.cachedDashboardState && this.api.cachedDashboardState.items) {
           this.api.cachedDashboardState.items = this.api.cachedDashboardState.items.filter(
@@ -355,7 +355,7 @@ export class MediaDetailComponent implements OnInit {
             this.api.cachedDashboardState.total--;
           }
         }
-        
+
         this.goBack();
       },
       error: () => {
