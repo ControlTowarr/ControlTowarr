@@ -1,0 +1,87 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Deletion Logs</h1>
+    <p class="page-subtitle">Historical log of all media items removed from your storage</p>
+  </div>
+</div>
+
+<!-- Table Card -->
+<div class="card p-0 mt-6">
+  <div class="p-6 border-b border-white/5 flex justify-between items-center">
+    <h2 class="text-lg font-medium">Deleted Media</h2>
+    <div class="text-sm text-secondary">Showing {{ offset + 1 }} - {{ offset + limit < total ? offset + limit : total }} of {{ total }}</div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="text-secondary text-sm font-medium border-b border-white/5">
+          <th class="p-4 px-6 font-semibold min-w-40">Date</th>
+          <th class="p-4 px-6 font-semibold">Title</th>
+          <th class="p-4 px-6 font-semibold">Type</th>
+          <th class="p-4 px-6 font-semibold text-right">Space Freed</th>
+          <th class="p-4 px-6 font-semibold min-w-[200px]">IDs</th>
+        </tr>
+      </thead>
+      <tbody class="text-sm" *ngIf="!isLoading && logs.length > 0">
+        <tr *ngFor="let log of logs" class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+          
+          <td class="p-4 px-6 font-mono text-[0.85em] text-secondary">
+            {{ log.deleted_at }}
+          </td>
+
+          <td class="p-4 px-6">
+            <div class="font-medium text-primary">{{ log.title || 'Unknown' }}</div>
+            <div class="text-secondary text-xs mt-1" *ngIf="log.details?.year">{{ log.details.year }}</div>
+          </td>
+
+          <td class="p-4 px-6 capitalize text-secondary">
+            {{ log.type || 'unknown' }}
+          </td>
+
+          <td class="p-4 px-6 text-right font-mono text-success whitespace-nowrap">
+            {{ formatSize(log.freed_bytes) }}
+          </td>
+
+          <td class="p-4 px-6 max-w-[250px]">
+            <div class="flex flex-wrap gap-2 text-xs font-mono" *ngIf="log.details">
+              <span class="bg-white/5 px-2 py-1 rounded text-secondary" *ngIf="log.details.tmdb_id">TMDB: {{ log.details.tmdb_id }}</span>
+              <span class="bg-white/5 px-2 py-1 rounded text-secondary" *ngIf="log.details.imdb_id">IMDB: {{ log.details.imdb_id }}</span>
+              <span class="bg-white/5 px-2 py-1 rounded text-secondary" *ngIf="log.details.tvdb_id">TVDB: {{ log.details.tvdb_id }}</span>
+            </div>
+            <span class="text-secondary text-xs italic" *ngIf="!log.details">none</span>
+          </td>
+        </tr>
+      </tbody>
+      
+      <!-- Empty State -->
+      <tbody *ngIf="!isLoading && logs.length === 0">
+        <tr>
+          <td colspan="5" class="p-8 text-center text-secondary">
+            No deleted media logs found.
+          </td>
+        </tr>
+      </tbody>
+      
+      <!-- Loading State -->
+      <tbody *ngIf="isLoading">
+        <tr>
+          <td colspan="5" class="p-8 text-center text-secondary">
+            Loading history...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="p-4 border-t border-white/5 flex items-center justify-between" *ngIf="total > limit">
+    <button class="btn btn-secondary px-4 py-2 text-sm" (click)="prevPage()" [disabled]="offset === 0">
+      Previous
+    </button>
+    <div class="text-sm text-secondary">Page {{ (offset / limit) + 1 }}</div>
+    <button class="btn btn-secondary px-4 py-2 text-sm" (click)="nextPage()" [disabled]="offset + limit >= total">
+      Next
+    </button>
+  </div>
+</div>

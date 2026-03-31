@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  controltowarr:
+    build: .
+    container_name: controltowarr
+    ports:
+      - "3377:3377"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3377
+      - DB_PATH=/app/data/controltowarr.db
+      - SYNC_INTERVAL_MINUTES=15
+      - LOG_LEVEL=info
+    restart: unless-stopped

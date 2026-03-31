@@ -1,0 +1,75 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Statistics</h1>
+    <p class="page-subtitle">Your library and activity insights</p>
+  </div>
+</div>
+
+<div class="stats-container" *ngIf="stats">
+  <!-- Top Cards -->
+  <div class="stats-grid top-cards">
+    <div class="stat-card card-glass">
+      <div class="stat-title">Total Library Size</div>
+      <div class="stat-value text-accent">{{ formatSize(stats.current.totalSizeBytes) }}</div>
+      <div class="stat-sub">Across {{ stats.current.totalMovies }} Movies & {{ stats.current.totalSeries }} Series</div>
+    </div>
+    <div class="stat-card card-glass">
+      <div class="stat-title">Media Items Deleted</div>
+      <div class="stat-value text-danger">{{ stats.actions.summary.totalDeleted?.count || 0 }}</div>
+      <div class="stat-sub">Since tracking began</div>
+    </div>
+    <div class="stat-card card-glass">
+      <div class="stat-title">Disk Space Freed</div>
+      <div class="stat-value text-success">{{ formatSize(stats.actions.summary.totalDeleted?.total_bytes || 0) }}</div>
+      <div class="stat-sub">From deleted media</div>
+    </div>
+  </div>
+
+  <!-- Trends Row -->
+  <div class="stats-grid charts-row">
+    <div class="chart-card card">
+      <h3 class="chart-title">Disk Usage Trend (Last 30 Days)</h3>
+      <div class="chart-wrapper">
+        <canvas #trendChart></canvas>
+      </div>
+    </div>
+    
+    <div class="chart-card card">
+      <h3 class="chart-title">Library Growth (Last 30 Days)</h3>
+      <div class="chart-wrapper">
+        <canvas #itemCountChart></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Distribution Row -->
+  <div class="stats-grid charts-row mt-4">
+    <div class="chart-card card">
+      <h3 class="chart-title">Space Used by Instance</h3>
+      <div class="chart-wrapper">
+        <canvas #instanceChart></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card card">
+      <h3 class="chart-title">Content Watched Status</h3>
+      <div class="chart-wrapper">
+        <canvas #watchChart></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Additional Row -->
+  <div class="stats-grid full-row mt-4">
+    <div class="chart-card card">
+      <h3 class="chart-title">Space Freed (Monthly)</h3>
+      <div class="chart-wrapper">
+        <canvas #freedChart></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isLoading" class="loading-state">
+  <p>Loading statistics...</p>
+</div>

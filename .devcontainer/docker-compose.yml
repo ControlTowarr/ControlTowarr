@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  controltowarr:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: controltowarr-dev
+    ports:
+      - "3377:3377"
+      - "4200:4200"
+    volumes:
+      - ..:/app:cached
+      - controltowarr-node-modules-server:/app/server/node_modules
+      - controltowarr-node-modules-client:/app/client/node_modules
+      - controltowarr-data:/app/data
+    environment:
+      - NODE_ENV=development
+      - PORT=3377
+      - DB_PATH=/app/data/controltowarr.db
+    command: sleep infinity
+
+volumes:
+  controltowarr-node-modules-server:
+  controltowarr-node-modules-client:
+  controltowarr-data:
