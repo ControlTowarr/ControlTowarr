@@ -72,7 +72,7 @@ docker compose up -d
 ### Build from Source with Docker
 
 ```bash
-git clone https://github.com/Moustachauve/ControlTowarr.git
+git clone https://github.com/ControlTowarr/ControlTowarr.git
 cd ControlTowarr
 docker build -t controltowarr .
 docker run -d -p 3377:3377 -v ./data:/app/data controltowarr
@@ -83,7 +83,7 @@ docker run -d -p 3377:3377 -v ./data:/app/data controltowarr
 **Requirements:** Node.js 20+, npm 9+
 
 ```bash
-git clone https://github.com/Moustachauve/ControlTowarr.git
+git clone https://github.com/ControlTowarr/ControlTowarr.git
 cd ControlTowarr
 npm run install:all
 npm run dev
