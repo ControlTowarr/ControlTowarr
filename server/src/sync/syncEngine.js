@@ -6,6 +6,7 @@ import { RadarrClient } from '../services/radarr.js';
 import { SonarrClient } from '../services/sonarr.js';
 import { TautulliClient } from '../services/tautulli.js';
 import { PlexClient } from '../services/plex.js';
+import { SeerrClient } from '../services/seerr.js';
 import { QBittorrentClient } from '../services/qbittorrent.js';
 
 let syncTimeout = null;
@@ -84,6 +85,12 @@ export async function runFullSync() {
     const plexInstances = queries.getInstancesByType('plex');
     for (const instance of plexInstances) {
       await syncPlex(instance);
+    }
+ 
+    // Sync Seerr (requests)
+    const seerrInstances = queries.getInstancesByType('seerr');
+    for (const instance of seerrInstances) {
+      await syncSeerr(instance);
     }
 
     // Sync download clients (seeding status)
@@ -363,6 +370,61 @@ async function syncQBittorrent(instance) {
   } catch (error) {
     queries.completeSyncLog(logId, { status: 'failure', message: error.message });
     logger.error(`qBittorrent sync failed [${instance.name}]: ${error.message}`);
+  }
+}
+
+async function syncSeerr(instance) {
+  const logId = queries.createSyncLog({ instance_id: instance.id, sync_type: 'seerr' });
+
+  try {
+    const client = new SeerrClient(instance);
+    let totalRequests = 0;
+    let matchedRequests = 0;
+    let skip = 0;
+    const take = 100;
+
+    while (true) {
+      const data = await client.getRequests(take, skip);
+      if (!data.results || data.results.length === 0) break;
+
+      for (const req of data.results) {
+        totalRequests++;
+        
+        // Find media item by TMDB/TVDB ID
+        const mediaType = req.type === 'movie' ? 'movie' : 'series';
+        const mediaItem = queries.findMediaByExternalId({
+          tmdb_id: req.media?.tmdbId ? String(req.media.tmdbId) : null,
+          tvdb_id: req.media?.tvdbId ? String(req.media.tvdbId) : null,
+        });
+
+        if (mediaItem) {
+          queries.upsertMediaRequest({
+            media_item_id: mediaItem.id,
+            external_id: req.id,
+            requested_by_name: req.requestedBy?.displayName || req.requestedBy?.email,
+            requested_by_avatar: req.requestedBy?.avatar,
+            requested_by_id: req.requestedBy?.id,
+            requested_at: req.createdAt,
+            type: req.is4k ? '4k' : 'standard',
+          });
+          matchedRequests++;
+        }
+      }
+
+      if (data.results.length < take) break;
+      skip += take;
+    }
+
+    queries.updateInstanceLastSync(instance.id);
+    queries.completeSyncLog(logId, {
+      status: 'success',
+      message: `Processed ${totalRequests} requests, matched ${matchedRequests} to local items.`,
+      items_processed: matchedRequests,
+    });
+    logger.info(`Seerr sync [${instance.name}]: ${matchedRequests}/${totalRequests} requests matched`);
+  } catch (error) {
+    queries.completeSyncLog(logId, { status: 'failure', message: error.message });
+    logger.error(`Seerr sync failed [${instance.name}]: ${error.message}`);
   }
 }
 

@@ -9,6 +9,7 @@ export interface FilterState {
   mediaType: string;
   seedingStatus: string;
   watchStatus: string;
+  requestedBy: string;
 }
 
 @Component({
@@ -31,14 +32,6 @@ export interface FilterState {
         />
       </div>
 
-      <select class="form-select" [(ngModel)]="filters.sort" (ngModelChange)="onFilterChange()" id="sort-select">
-        <option value="title">Sort: Title</option>
-        <option value="added_at">Sort: Date Added</option>
-        <option value="last_watched_at">Sort: Last Watched</option>
-        <option value="year">Sort: Year</option>
-        <option value="size_bytes">Sort: Disk Space</option>
-      </select>
-
       <button class="btn btn-secondary" (click)="toggleOrder()" id="order-toggle-btn" [title]="filters.order === 'asc' ? 'Ascending' : 'Descending'" style="padding: 10px; min-width: 42px;">
         <!-- Bars getting progressively longer (Ascending) -->
         <svg *ngIf="filters.order === 'asc'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -53,6 +46,21 @@ export interface FilterState {
           <line x1="4" y1="18" x2="10" y2="18"></line>
         </svg>
       </button>
+
+      <select class="form-select" [(ngModel)]="filters.sort" (ngModelChange)="onFilterChange()" id="sort-select">
+        <option value="title">Sort: Title</option>
+        <option value="added_at">Sort: Date Added</option>
+        <option value="last_watched_at">Sort: Last Watched</option>
+        <option value="year">Sort: Year</option>
+        <option value="size_bytes">Sort: Disk Space</option>
+      </select>
+ 
+      <select class="form-select" [(ngModel)]="filters.requestedBy" (ngModelChange)="onFilterChange()" id="requested-by-select">
+        <option value="">Requested By: All</option>
+        <option *ngFor="let user of requesters" [value]="user.requested_by_name">
+          {{ user.requested_by_name }}
+        </option>
+      </select>
 
       <div style="display:flex;gap:var(--space-sm);">
         <button
@@ -127,7 +135,9 @@ export class FilterBarComponent {
     mediaType: '',
     seedingStatus: '',
     watchStatus: '',
+    requestedBy: '',
   };
+  @Input() requesters: any[] = [];
   @Output() filtersChange = new EventEmitter<FilterState>();
 
   setMediaType(type: string) {

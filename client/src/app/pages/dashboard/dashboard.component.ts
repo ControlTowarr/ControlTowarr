@@ -40,6 +40,7 @@ import { DeleteModalComponent } from '../../components/delete-modal/delete-modal
 
     <app-filter-bar
       [filters]="filters"
+      [requesters]="requesters"
       (filtersChange)="onFiltersChange($event)"
     ></app-filter-bar>
 
@@ -104,6 +105,7 @@ export class DashboardComponent implements OnInit {
   deleteTargetList: string[] = [];
   selectedItems = new Set<number>();
   hasDownloadClient = false;
+  requesters: any[] = [];
 
   filters: FilterState = {
     search: '',
@@ -112,6 +114,7 @@ export class DashboardComponent implements OnInit {
     mediaType: '',
     seedingStatus: '',
     watchStatus: '',
+    requestedBy: '',
   };
 
   private currentLimit = 100;
@@ -140,11 +143,19 @@ export class DashboardComponent implements OnInit {
         mediaType: params['mediaType'] || '',
         seedingStatus: params['seedingStatus'] || '',
         watchStatus: params['watchStatus'] || '',
+        requestedBy: params['requestedBy'] || '',
       };
       this.loadMedia();
     });
+    this.loadRequesters();
     this.checkSyncStatus();
     this.checkDownloadClient();
+  }
+ 
+  loadRequesters() {
+    this.api.getRequesters().subscribe(requesters => {
+      this.requesters = requesters;
+    });
   }
 
   checkDownloadClient() {
@@ -171,6 +182,7 @@ export class DashboardComponent implements OnInit {
       mediaType: this.filters.mediaType || undefined,
       seedingStatus: this.filters.seedingStatus || undefined,
       watchStatus: this.filters.watchStatus || undefined,
+      requestedBy: this.filters.requestedBy || undefined,
       search: this.filters.search || undefined,
       limit: this.currentLimit,
       offset: 0,
@@ -213,6 +225,7 @@ export class DashboardComponent implements OnInit {
         mediaType: filters.mediaType || null,
         seedingStatus: filters.seedingStatus || null,
         watchStatus: filters.watchStatus || null,
+        requestedBy: filters.requestedBy || null,
       },
       queryParamsHandling: 'merge',
     });

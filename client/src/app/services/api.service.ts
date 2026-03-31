@@ -32,6 +32,7 @@ export interface MediaItem {
   instance_names?: string;
   instance_types?: string;
   total_size_bytes?: number;
+  requests?: { name: string; avatar?: string }[];
 }
 
 export interface MediaListResponse {
@@ -45,6 +46,20 @@ export interface MediaDetail extends MediaItem {
   instances: MediaInstanceDetail[];
   downloads: DownloadRecord[];
   watchHistory: WatchHistoryEntry[];
+  requests: MediaRequest[];
+}
+ 
+export interface MediaRequest {
+  id: number;
+  media_item_id: number;
+  external_id: number;
+  requested_by_name: string;
+  requested_by_avatar?: string;
+  requested_by_id?: number;
+  requested_at: string;
+  type?: string;
+  name: string;
+  avatar?: string;
 }
 
 export interface MediaInstanceDetail {
@@ -171,6 +186,7 @@ export class ApiService {
     seedingStatus?: string;
     watchStatus?: string;
     search?: string;
+    requestedBy?: string;
     limit?: number;
     offset?: number;
   } = {}): Observable<MediaListResponse> {
@@ -196,7 +212,11 @@ export class ApiService {
   triggerSync(): Observable<any> {
     return this.http.post(`${this.baseUrl}/sync`, {});
   }
-
+ 
+  getRequesters(): Observable<{ requested_by_name: string; requested_by_avatar?: string; requested_by_id?: number }[]> {
+    return this.http.get<{ requested_by_name: string; requested_by_avatar?: string; requested_by_id?: number }[]>(`${this.baseUrl}/media/requesters`);
+  }
+ 
   getSyncStatus(): Observable<SyncStatus> {
     return this.http.get<SyncStatus>(`${this.baseUrl}/sync/status`);
   }

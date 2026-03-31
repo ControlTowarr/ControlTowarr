@@ -124,10 +124,14 @@ export function deleteMediaItem(id) {
   return getDb().prepare('DELETE FROM media_items WHERE id = ?').run(id);
 }
 
-export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedingStatus, watchStatus, search, limit = 100, offset = 0 } = {}) {
+export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedingStatus, watchStatus, requestedBy, search, limit = 100, offset = 0 } = {}) {
   let where = [];
   let params = [];
 
+  if (requestedBy) {
+    where.push('m.id IN (SELECT media_item_id FROM media_requests WHERE requested_by_name = ?)');
+    params.push(requestedBy);
+  }
   if (mediaType) {
     where.push('m.media_type = ?');
     params.push(mediaType);
@@ -173,14 +177,21 @@ export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedin
     SELECT m.*,
       (SELECT SUM(mi.size_bytes) FROM media_instances mi WHERE mi.media_item_id = m.id) as total_size_bytes,
       (SELECT GROUP_CONCAT(DISTINCT i.name) FROM media_instances mi JOIN instances i ON mi.instance_id = i.id WHERE mi.media_item_id = m.id) as instance_names,
-      (SELECT GROUP_CONCAT(DISTINCT i.type) FROM media_instances mi JOIN instances i ON mi.instance_id = i.id WHERE mi.media_item_id = m.id) as instance_types
+      (SELECT GROUP_CONCAT(DISTINCT i.type) FROM media_instances mi JOIN instances i ON mi.instance_id = i.id WHERE mi.media_item_id = m.id) as instance_types,
+      (SELECT JSON_GROUP_ARRAY(JSON_OBJECT('name', name, 'avatar', avatar)) FROM (SELECT DISTINCT requested_by_name as name, requested_by_avatar as avatar FROM media_requests WHERE media_item_id = m.id)) as requests
     FROM media_items m
     ${whereClause}
     ${orderClause}
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
 
-  return { items, total: countResult.total, limit, offset };
+  return {
+    items: items.map(item => ({
+      ...item,
+      requests: item.requests ? JSON.parse(item.requests) : []
+    })),
+    total: countResult.total, limit, offset
+  };
 }
 
 export function getMediaItemDetail(id) {
@@ -205,7 +216,14 @@ export function getMediaItemDetail(id) {
     SELECT * FROM watch_history WHERE media_item_id = ? ORDER BY watched_at DESC LIMIT 50
   `).all(id);
 
-  return { ...item, instances, downloads, watchHistory };
+  const requests = getDb().prepare(`
+    SELECT *, requested_by_name as name, requested_by_avatar as avatar
+    FROM media_requests 
+    WHERE media_item_id = ? 
+    ORDER BY requested_at DESC
+  `).all(id);
+
+  return { ...item, instances, downloads, watchHistory, requests };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -408,7 +426,7 @@ export function getActionSummary() {
     FROM action_logs 
     WHERE action_type = 'media_deleted'
   `).get();
-  
+
   const deletedPerInstance = getDb().prepare(`
     SELECT a.instance_id, i.name as instance_name, i.type as instance_type, COUNT(*) as count, SUM(a.size_freed_bytes) as total_bytes
     FROM action_logs a
@@ -453,4 +471,31 @@ export function getDeletionLogs(limit = 100, offset = 0) {
     limit,
     offset
   };
+}
+
+// ═══════════════════════════════════════════════════════════
+// MEDIA REQUESTS
+// ═══════════════════════════════════════════════════════════
+
+export function upsertMediaRequest({ media_item_id, external_id, requested_by_name, requested_by_avatar, requested_by_id, requested_at, type }) {
+  getDb().prepare(`
+    INSERT INTO media_requests (media_item_id, external_id, requested_by_name, requested_by_avatar, requested_by_id, requested_at, type, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    ON CONFLICT(media_item_id, external_id) DO UPDATE SET
+      requested_by_name = excluded.requested_by_name,
+      requested_by_avatar = excluded.requested_by_avatar,
+      requested_by_id = excluded.requested_by_id,
+      requested_at = excluded.requested_at,
+      type = excluded.type,
+      updated_at = datetime('now')
+  `).run(media_item_id, external_id, requested_by_name || null, requested_by_avatar || null, requested_by_id || null, requested_at || null, type || null);
+}
+
+export function getUniqueRequesters() {
+  return getDb().prepare(`
+    SELECT DISTINCT requested_by_name, requested_by_avatar, requested_by_id 
+    FROM media_requests 
+    WHERE requested_by_name IS NOT NULL
+    ORDER BY requested_by_name ASC
+  `).all();
 }

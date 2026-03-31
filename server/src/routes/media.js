@@ -11,21 +11,33 @@ const router = Router();
 // GET /api/media — list media with filters and sorting
 router.get('/', (req, res) => {
   try {
-    const { sort, order, mediaType, seedingStatus, watchStatus, search, limit, offset } = req.query;
+    const { sort, order, mediaType, seedingStatus, watchStatus, requestedBy, search, limit, offset } = req.query;
     const result = queries.getMediaItems({
       sort,
       order,
       mediaType,
       seedingStatus,
       watchStatus,
+      requestedBy,
       search,
       limit: limit ? parseInt(limit, 10) : 100,
-      offset: offset ? parseInt(offset, 10) : 0,
+      offset: offset ? parseInt(offset, 0) : 0,
     });
     res.json(result);
   } catch (error) {
     logger.error('Failed to get media:', error);
     res.status(500).json({ error: 'Failed to get media' });
+  }
+});
+
+// GET /api/media/requesters — get list of unique requesters
+router.get('/requesters', (req, res) => {
+  try {
+    const requesters = queries.getUniqueRequesters();
+    res.json(requesters);
+  } catch (error) {
+    logger.error('Failed to get requesters:', error);
+    res.status(500).json({ error: 'Failed to get requesters' });
   }
 });
 

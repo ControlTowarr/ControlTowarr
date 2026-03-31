@@ -23,6 +23,20 @@ import { MediaItem } from '../../services/api.service';
         </span>
       </div>
 
+      <div class="media-card-requesters" *ngIf="media.requests && media.requests.length > 0">
+        <div 
+          *ngFor="let req of media.requests | slice:0:3" 
+          class="requester-avatar-mini"
+          [title]="'Requested by ' + req.name"
+        >
+          <img *ngIf="req.avatar" [src]="req.avatar" [alt]="req.name" />
+          <div *ngIf="!req.avatar" class="avatar-placeholder">{{ req.name.charAt(0).toUpperCase() }}</div>
+        </div>
+        <div *ngIf="media.requests.length > 3" class="requester-avatar-mini more">
+          +{{ media.requests.length - 3 }}
+        </div>
+      </div>
+
       <img
         *ngIf="media.poster_url"
         [src]="media.poster_url"

@@ -101,4 +101,18 @@ export class SeerrClient {
       return { success: false, error: error.message };
     }
   }
+
+  async getRequests(take = 100, skip = 0) {
+    try {
+      const response = await this.client.get('/request', {
+        params: { take, skip, sort: 'added' }
+      });
+      return response.data; // { pageInfo: { page, pages, results, total }, results: [...] }
+    } catch (error) {
+      const status = error.response?.status || 'unknown';
+      const data = error.response?.data ? JSON.stringify(error.response.data) : 'no data';
+      logger.error(`Seerr getRequests failed with status ${status}: ${data}. URL: ${error.config?.url}`);
+      return { results: [], pageInfo: { total: 0 } };
+    }
+  }
 }

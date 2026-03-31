@@ -143,6 +143,41 @@ import { DeleteModalComponent } from '../../components/delete-modal/delete-modal
         </table>
       </div>
 
+      <!-- Requests Section -->
+      <div class="detail-section" *ngIf="media.requests && media.requests.length > 0">
+        <h3 class="detail-section-title">Overseerr Requests ({{ media.requests.length }})</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Requester</th>
+              <th>Status</th>
+              <th>Requested At</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let req of media.requests">
+              <td style="display:flex;align-items:center;gap:var(--space-sm);">
+                <div class="requester-avatar-mini">
+                  <img *ngIf="req.requested_by_avatar" [src]="req.requested_by_avatar" [alt]="req.requested_by_name" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" />
+                  <div *ngIf="!req.requested_by_avatar" class="avatar-placeholder" style="width:24px;height:24px;border-radius:50%;background:var(--bg-accent);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:600;">
+                    {{ req.requested_by_name.charAt(0).toUpperCase() }}
+                  </div>
+                </div>
+                {{ req.requested_by_name }}
+              </td>
+              <td><span class="badge badge-success">Approved</span></td>
+              <td [title]="getISODate(req.requested_at)">{{ formatFullDate(req.requested_at) }}</td>
+              <td>
+                <span class="badge" [ngClass]="req.type === '4k' ? 'badge-warning' : 'badge-info'">
+                  {{ req.type === '4k' ? '4K' : 'Standard' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- Watch History Section -->
       <div class="detail-section" *ngIf="media.watchHistory.length > 0">
         <h3 class="detail-section-title">Watch History ({{ media.watchHistory.length }})</h3>

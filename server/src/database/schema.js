@@ -168,6 +168,24 @@ function createTables() {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE SET NULL
     );
+
+    CREATE TABLE IF NOT EXISTS media_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_item_id INTEGER NOT NULL,
+      external_id INTEGER,
+      requested_by_name TEXT,
+      requested_by_avatar TEXT,
+      requested_by_id INTEGER,
+      requested_at TEXT,
+      type TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (media_item_id) REFERENCES media_items(id) ON DELETE CASCADE,
+      UNIQUE(media_item_id, external_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_media_requests_media ON media_requests(media_item_id);
+    CREATE INDEX IF NOT EXISTS idx_media_requests_external ON media_requests(external_id);
   `);
 
   // Migration: add external_slug if missing
