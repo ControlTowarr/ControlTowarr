@@ -111,6 +111,7 @@ export class DashboardComponent implements OnInit {
     order: 'asc',
     mediaType: '',
     seedingStatus: '',
+    watchStatus: '',
   };
 
   private currentLimit = 100;
@@ -130,12 +131,15 @@ export class DashboardComponent implements OnInit {
     }
 
     this.route.queryParams.subscribe(params => {
+      const lsSort = localStorage.getItem('ct_sort');
+      const lsOrder = localStorage.getItem('ct_order');
       this.filters = {
         search: params['search'] || '',
-        sort: params['sort'] || 'title',
-        order: params['order'] || 'asc',
+        sort: params['sort'] || lsSort || 'title',
+        order: params['order'] || lsOrder || 'asc',
         mediaType: params['mediaType'] || '',
         seedingStatus: params['seedingStatus'] || '',
+        watchStatus: params['watchStatus'] || '',
       };
       this.loadMedia();
     });
@@ -166,6 +170,7 @@ export class DashboardComponent implements OnInit {
       order: this.filters.order,
       mediaType: this.filters.mediaType || undefined,
       seedingStatus: this.filters.seedingStatus || undefined,
+      watchStatus: this.filters.watchStatus || undefined,
       search: this.filters.search || undefined,
       limit: this.currentLimit,
       offset: 0,
@@ -197,6 +202,8 @@ export class DashboardComponent implements OnInit {
 
   onFiltersChange(filters: FilterState) {
     this.currentLimit = 100;
+    localStorage.setItem('ct_sort', filters.sort);
+    localStorage.setItem('ct_order', filters.order);
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
@@ -205,6 +212,7 @@ export class DashboardComponent implements OnInit {
         order: filters.order === 'asc' ? null : filters.order,
         mediaType: filters.mediaType || null,
         seedingStatus: filters.seedingStatus || null,
+        watchStatus: filters.watchStatus || null,
       },
       queryParamsHandling: 'merge',
     });

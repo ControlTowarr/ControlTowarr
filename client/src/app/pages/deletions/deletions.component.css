@@ -1,0 +1,15 @@
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--transition-fast);
+}
+th.sortable:hover {
+  color: var(--text-primary);
+}
+.sort-icon {
+  font-size: 0.8em;
+  margin-left: 4px;
+}
+.text-right {
+  text-align: right !important;
+}

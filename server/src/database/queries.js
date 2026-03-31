@@ -124,7 +124,7 @@ export function deleteMediaItem(id) {
   return getDb().prepare('DELETE FROM media_items WHERE id = ?').run(id);
 }
 
-export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedingStatus, search, limit = 100, offset = 0 } = {}) {
+export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedingStatus, watchStatus, search, limit = 100, offset = 0 } = {}) {
   let where = [];
   let params = [];
 
@@ -135,6 +135,11 @@ export function getMediaItems({ sort = 'title', order = 'asc', mediaType, seedin
   if (seedingStatus) {
     where.push('m.seeding_status = ?');
     params.push(seedingStatus);
+  }
+  if (watchStatus === 'unwatched') {
+    where.push('m.last_watched_at IS NULL');
+  } else if (watchStatus === 'watched') {
+    where.push('m.last_watched_at IS NOT NULL');
   }
   if (search) {
     where.push('m.title LIKE ?');
@@ -397,7 +402,7 @@ export function getHistoricalMetrics(days = 30) {
 
 export function getActionSummary() {
   const totalDeleted = getDb().prepare(`
-    SELECT COUNT(*) as count, SUM(size_freed_bytes) as total_bytes 
+    SELECT COUNT(DISTINCT media_title || strftime('%Y-%m-%d %H:%M', created_at)) as count, SUM(size_freed_bytes) as total_bytes 
     FROM action_logs 
     WHERE action_type = 'media_deleted'
   `).get();

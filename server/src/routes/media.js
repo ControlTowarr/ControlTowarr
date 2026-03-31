@@ -11,12 +11,13 @@ const router = Router();
 // GET /api/media — list media with filters and sorting
 router.get('/', (req, res) => {
   try {
-    const { sort, order, mediaType, seedingStatus, search, limit, offset } = req.query;
+    const { sort, order, mediaType, seedingStatus, watchStatus, search, limit, offset } = req.query;
     const result = queries.getMediaItems({
       sort,
       order,
       mediaType,
       seedingStatus,
+      watchStatus,
       search,
       limit: limit ? parseInt(limit, 10) : 100,
       offset: offset ? parseInt(offset, 10) : 0,

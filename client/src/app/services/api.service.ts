@@ -168,6 +168,7 @@ export class ApiService {
     order?: string;
     mediaType?: string;
     seedingStatus?: string;
+    watchStatus?: string;
     search?: string;
     limit?: number;
     offset?: number;

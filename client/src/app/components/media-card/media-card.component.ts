@@ -17,9 +17,9 @@ import { MediaItem } from '../../services/api.service';
         (change)="selectChange.emit(!selected)"
       />
 
-      <div class="media-card-badges" *ngIf="hasDownloadClient">
-        <span class="badge badge-vibrant" [ngClass]="seedingBadgeClass" [title]="'Seeding Status: ' + seedingLabel">
-          {{ seedingLabel }}
+      <div class="media-card-badges">
+        <span class="badge badge-vibrant" [ngClass]="media.media_type === 'movie' ? 'badge-radarr' : 'badge-sonarr'">
+          {{ media.media_type === 'movie' ? 'Movie' : 'Series' }}
         </span>
       </div>
 
@@ -39,8 +39,8 @@ import { MediaItem } from '../../services/api.service';
         
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; margin-top:2px;">
           <span *ngIf="media.year" style="color:var(--text-muted);font-size:0.75rem;">{{ media.year }}</span>
-          <span class="badge" [ngClass]="media.media_type === 'movie' ? 'badge-radarr' : 'badge-sonarr'" style="font-size:0.65rem;">
-            {{ media.media_type === 'movie' ? 'Movie' : 'Series' }}
+          <span *ngIf="hasDownloadClient" class="badge" [ngClass]="seedingBadgeClass" [title]="'Seeding Status: ' + seedingLabel" style="font-size:0.65rem;">
+            {{ seedingIcon }} {{ seedingLabel }}
           </span>
         </div>
 
@@ -86,6 +86,14 @@ export class MediaCardComponent {
       case 'seeding': return 'Seeding';
       case 'done': return 'Done';
       default: return 'Unknown';
+    }
+  }
+
+  get seedingIcon(): string {
+    switch (this.media.seeding_status) {
+      case 'seeding': return '🌱';
+      case 'done': return '🌳';
+      default: return '🍂';
     }
   }
 

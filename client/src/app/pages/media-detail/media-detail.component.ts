@@ -44,7 +44,7 @@ import { DeleteModalComponent } from '../../components/delete-modal/delete-modal
             <span class="badge" [ngClass]="media.media_type === 'movie' ? 'badge-radarr' : 'badge-sonarr'">
               {{ media.media_type === 'movie' ? 'Movie' : 'Series' }}
             </span>
-            <span class="badge" [ngClass]="seedingBadgeClass">{{ seedingLabel }}</span>
+            <span class="badge" [ngClass]="seedingBadgeClass">{{ seedingIcon }} {{ seedingLabel }}</span>
             <span *ngIf="media.year" class="badge badge-muted">{{ media.year }}</span>
             <span *ngIf="media.imdb_id" class="badge badge-info">{{ media.imdb_id }}</span>
           </div>
@@ -160,7 +160,7 @@ import { DeleteModalComponent } from '../../components/delete-modal/delete-modal
               <td>{{ wh.user_name }}</td>
               <td [title]="getISODate(wh.watched_at)">{{ formatFullDate(wh.watched_at) }}</td>
               <td>{{ formatDuration(wh.duration_seconds) }}</td>
-              <td>{{ (wh.percent_complete * 100).toFixed(0) }}%</td>
+              <td>{{ (wh.percent_complete > 1 ? wh.percent_complete : wh.percent_complete * 100).toFixed(0) }}%</td>
             </tr>
           </tbody>
         </table>
@@ -221,6 +221,15 @@ export class MediaDetailComponent implements OnInit {
       case 'seeding': return 'Seeding';
       case 'done': return 'Done Seeding';
       default: return 'Unknown';
+    }
+  }
+
+  get seedingIcon(): string {
+    if (!this.media) return '🍂';
+    switch (this.media.seeding_status) {
+      case 'seeding': return '🌱';
+      case 'done': return '🌳';
+      default: return '🍂';
     }
   }
 

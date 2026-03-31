@@ -16,6 +16,9 @@ export class DeletionsComponent implements OnInit {
   offset: number = 0;
   isLoading: boolean = false;
 
+  sortColumn: string = 'deleted_at';
+  sortDirection: 'asc' | 'desc' = 'desc';
+
   constructor(private api: ApiService) {}
 
   ngOnInit() {
@@ -58,5 +61,33 @@ export class DeletionsComponent implements OnInit {
     let size = bytes;
     while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
     return `${size.toFixed(1)} ${units[i]}`;
+  }
+
+  get sortedLogs() {
+    return [...this.logs].sort((a, b) => {
+      let valA = a[this.sortColumn];
+      let valB = b[this.sortColumn];
+      
+      if (this.sortColumn === 'freed_bytes') {
+        valA = Number(valA) || 0;
+        valB = Number(valB) || 0;
+      } else {
+        valA = String(valA || '').toLowerCase();
+        valB = String(valB || '').toLowerCase();
+      }
+
+      if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  toggleSort(column: string) {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'desc';
+    }
   }
 }
