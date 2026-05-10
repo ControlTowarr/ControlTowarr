@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   controltowarr:
-    build: .
+    image: ghcr.io/controltowarr/controltowarr:latest
     container_name: controltowarr
     ports:
       - "3377:3377"
