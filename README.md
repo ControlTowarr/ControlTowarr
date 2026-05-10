@@ -50,7 +50,7 @@ ControlTowarr is a self-hosted web app that connects to your Radarr, Sonarr, See
 ```yaml
 services:
   controltowarr:
-    image: controltowarr:latest
+    image: ghcr.io/controltowarr/controltowarr:latest
     container_name: controltowarr
     ports:
       - "3377:3377"
